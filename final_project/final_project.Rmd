@@ -1,0 +1,59 @@
+---
+title: "Queens Housing Data"
+output: word_document
+---
+
+
+### Data Wrangling
+
+```{r data wrangling, message=FALSE, warning=FALSE}
+pacman::p_load(skimr, dplyr, magrittr, lubridate, stringr, ggplot2)
+myDF = readr::read_csv("/Users/meiheliu/Math-342W/final_project/housing_data_2016_2017.csv")
+
+myDF %<>% 
+  mutate(cats_allowed = ifelse(cats_allowed == "yes" | cats_allowed == "y", 1, 0),
+         dogs_allowed = ifelse(dogs_allowed == "yes" | dogs_allowed == "yes89", 1, 0),
+         coop_condo = ifelse(coop_condo == "co-op", 1, 0),
+         garage_exists= ifelse(!is.na(garage_exists), 1, 0),
+         kitchen_type = factor(ifelse(kitchen_type == "eat in" | kitchen_type == "Eat In" | 
+                                      kitchen_type == "Eat in" | kitchen_type == "eatin", "eat in",
+                                      ifelse(kitchen_type == "Combo" | kitchen_type == "combo", "combo",
+                                             ifelse(kitchen_type == "efficiency" | kitchen_type == "efficiency kitchene" |
+                                                    kitchen_type == "efficiency kitchen" | kitchen_type == "efficiemcy" |
+                                                    kitchen_type == "efficiency ktchen", "efficiency", kitchen_type)))),
+         fuel_type = ifelse(fuel_type == "Other" |fuel_type == "none", "other", fuel_type),
+         maintenance_cost = as.numeric(str_remove_all(str_remove_all(maintenance_cost, "[,]"), "[$]")),
+         parking_charges = as.numeric(str_remove_all(str_remove_all(parking_charges, "[,]"), "[$]")),
+         sale_price = as.numeric(str_remove_all(str_remove_all(sale_price, "[,]"), "[$]")),
+         total_taxes = as.numeric(str_remove_all(str_remove_all(total_taxes, "[,]"), "[$]")),
+         listing_price_to_nearest_1000 = as.numeric(str_remove_all(str_remove_all(listing_price_to_nearest_1000, "[,]"), "[$]")),
+         common_charges = as.numeric(str_remove_all(str_remove_all(common_charges, "[,]"), "[$]")),
+         zip_code = str_sub(URL, start = -15, end = -11),
+         street_address = sapply(strsplit(full_address_or_zip_code, ","),"[",1),
+         date_of_sale = mdy(date_of_sale),
+         month_of_sale = month(date_of_sale),
+         season = factor(ifelse(month_of_sale == 3 | month_of_sale == 4 | month_of_sale == 5, "spring", 
+                                ifelse(month_of_sale == 6 | month_of_sale == 7 | month_of_sale == 8, "summer", 
+                                       ifelse(month_of_sale == 9 | month_of_sale == 10 | month_of_sale == 11, "fall", 
+                                              ifelse(month_of_sale == 12 | month_of_sale == 1 | month_of_sale == 2, "winter", NA)))))
+         
+         ) %>% 
+  
+  filter(!is.na(approx_year_built), !is.na(kitchen_type), !is.na(num_total_rooms),!is.na(community_district_num),!is.na(sale_price)) %>%
+  select(-CreationTime, -Expiration, -url, -Description, -RequesterAnnotation,
+         -num_half_bathrooms, -garage_exists, -HITId, -HITTypeId, -AssignmentId, -WorkerId, -AcceptTime,
+         -SubmitTime, -AutoApprovalTime, -ApprovalTime, -LifetimeApprovalRate, -Last7DaysApprovalRate, 
+         -Last30DaysApprovalRate, -Keywords, -NumberOfSimilarHITs, -LifetimeInSeconds, -RejectionTime,
+         -RequesterFeedback, -URL, -full_address_or_zip_code, -model_type, -date_of_sale,
+         -listing_price_to_nearest_1000, -month_of_sale) %>% 
+  mutate(kitchen_type = factor(kitchen_type),
+         fuel_type = factor(fuel_type),
+         dining_room_type = factor(dining_room_type)) 
+
+colnames(myDF)
+newDF = myDF %<>%
+  filter(!is.na(sale_price))
+
+skim(newDF)
+```
+
